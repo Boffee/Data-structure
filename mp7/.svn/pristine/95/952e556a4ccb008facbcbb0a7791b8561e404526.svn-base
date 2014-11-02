@@ -1,0 +1,7 @@
+Monad Autograder
+Testing mp7 at 2014-05-01 01:16:37
+
+"I can calculate the motions of the heavenly bodies, but not the madness of people." ~ Isaac Newton
+
+Setting up test environment...
+Error: /dev/shm/geigle1/monad/sp14-cs225/zli16/mp7/maze.h does not exist.

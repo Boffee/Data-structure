@@ -1,0 +1,179 @@
+/**
+ * @file kdtree.cpp
+ * Implementation of KDTree class.
+ */
+#include <cmath>
+#include <ostream>
+
+template<int Dim>
+bool KDTree<Dim>::smallerDimVal(const Point<Dim> & first, const Point<Dim> & second, int curDim) const
+{
+    /**
+     * @todo Implement this function!
+     */
+	if (first[curDim] < second[curDim]) return true;
+	if (first[curDim] > second[curDim]) return false;
+	else return first < second;
+}
+
+
+template<int Dim>
+bool KDTree<Dim>::shouldReplace(const Point<Dim> & target, const Point<Dim> & currentBest, const Point<Dim> & potential) const
+{
+    /**
+     * @todo Implement this function!
+     */
+	int best = sqdistance(target, currentBest);
+	int pot = sqdistance(target, potential);
+
+	if (pot < best) return true;
+	if (pot > best) return false;
+    else return potential < currentBest;
+}
+
+template< int Dim>
+int KDTree<Dim>::sqdistance(const Point<Dim> & first, const Point<Dim> & second) const
+{
+	int d = 0;
+	for ( int i = 0; i < Dim; i++)
+		d = d + pow((first[i]-second[i]),2);
+	return d;
+}
+
+template<int Dim>
+KDTree<Dim>::KDTree(const vector< Point<Dim> > & newPoints)
+{
+    /**
+     * @todo Implement this function!
+     */
+	if (newPoints.size() == 0) return;
+	points = newPoints;
+	buildTree(points, 0, points.size()-1, 0);
+	/*for (int i = 0; i < points.size(); i++){
+		std::cout << points[i];
+	}
+	std::cout<< std::endl;*/
+}
+
+// ctor helper
+template<int Dim>
+void KDTree<Dim>::buildTree(vector< Point<Dim> > & newPoints, int start, int end, int curDim)
+{
+    if(end <= start){
+		return;	
+	}
+    int median = (end+start)/2;
+    sort(newPoints, start, end, median, curDim);
+    int target = median;
+
+    // go up to next dimension
+    curDim = (curDim+1)%Dim;
+    // recursive call of build points
+    buildTree(newPoints, start, median-1, curDim);
+    buildTree(newPoints, median+1, end, curDim);
+}
+
+//find the median
+template<int Dim>
+Point<Dim> KDTree<Dim>::findMedian(vector< Point<Dim> > & newPoints,int start, int end, int curDim)
+{
+	sort(newPoints, start, end, (start+end)/2, curDim);
+    return newPoints[(end+start)/2];
+}
+
+//sort the vector froms start to end in the current dimension
+template<int Dim>
+void KDTree<Dim>::sort(vector< Point<Dim> > & newPoints,int start, int end, int mid, int curDim)
+{
+    if(end <= start){
+		//std::cout<< start << " : " << end << std::endl;		
+		return;	
+	}
+    int target = start;
+	for(int i = start+1; i <= end; i++){
+        // if point at i is same as target target
+        if (newPoints[target][curDim] > newPoints[i][curDim]) {
+            // insert point at i before curr
+			newPoints.insert(newPoints.begin()+target,newPoints[i]);
+			newPoints.erase(newPoints.begin()+i+1);
+			target++;
+        }        
+		else if (newPoints[target][curDim] == newPoints[i][curDim]){
+            if (newPoints[i] < newPoints[target]){
+			newPoints.insert(newPoints.begin()+target,newPoints[i]);
+			newPoints.erase(newPoints.begin()+i+1);
+			target++;
+			}
+        }
+    }
+    //recursive sort
+	if(target > mid) sort(newPoints, start, target-1, mid, curDim);
+    else if(target < mid) sort(newPoints, target+1, end, mid, curDim);
+	/*	
+	for (int i = start; i <= end; i++){
+		std::cout << newPoints[i];
+	}
+	std::cout<< std::endl; 
+	*/
+
+}
+
+
+template<int Dim>
+Point<Dim> KDTree<Dim>::findNearestNeighbor(const Point<Dim> & query) const
+{
+    /**
+     * @todo Implement this function!
+     */
+	return findNearestNeighbor(query,points[(points.size()-1)/2], 0, points.size()-1, 0);
+
+}
+template<int Dim>
+Point<Dim> KDTree<Dim>::findNearestNeighbor(const Point<Dim> & target,const Point<Dim> & currentBest, int start, int end, int curDim) const
+{
+	//base case
+	if (end <= start){
+		if (shouldReplace(target, currentBest, points[start]))
+			return points[start];
+		return currentBest;
+	}
+
+	int median = (start+end)/2;
+	int nextDim = (curDim+1)%Dim;
+	Point<Dim> Best;
+	bool lr; // 0 = went left, 1 = went right
+	if(smallerDimVal(target, points[median], curDim))
+	{
+		lr = 0;
+		Best = findNearestNeighbor(target, currentBest, start, median-1, nextDim);	
+	}
+	else
+	{
+		lr = 1;
+		Best = findNearestNeighbor(target, currentBest, median+1, end, nextDim);
+	}
+
+	if(shouldReplace(target, Best, points[median])) Best = points[median];
+	
+
+	if (pow(points[median][curDim]-target[curDim],2) <= sqdistance(target, Best)){
+		if (lr == 0) // go right
+			Best = findNearestNeighbor(target, Best, median+1, end, nextDim);
+		if (lr == 1) // go left
+			Best = findNearestNeighbor(target, Best, start, median-1, nextDim);			
+	}
+	return Best;
+}
+
+template<int Dim>
+Point<Dim> KDTree<Dim>::split(const Point<Dim> & target, const Point<Dim> & currentBest , const Point<Dim> & potential,int start, int end, int curDim, bool lr) const
+{
+	int median = (start+end)/2;
+	int nextDim = (curDim+1)%Dim;
+	if(pow(potential[curDim]-target[curDim],2) < sqdistance(currentBest, target))
+	{
+		if(lr == 1) return findNearestNeighbor(target, potential, median+1, end, nextDim);
+		else if(lr == 0) return findNearestNeighbor(target, potential, start, median-1, nextDim);
+	}
+	else return currentBest;
+}

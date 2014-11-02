@@ -1,0 +1,195 @@
+// **************************************************************
+// *		   
+// *  quadtree.cpp
+// *		   
+// *  Quadtree class
+// *		   
+// *  CS 225 Spring 2008
+// *		   
+// **************************************************************
+
+#include "quadtree.h"
+#include <cmath>
+
+//empty ctor
+Quadtree::Quadtree(){
+    root = NULL;
+}
+
+//empty ctor node
+Quadtree::QuadtreeNode::QuadtreeNode(){
+    nwChild = NULL;
+    neChild = NULL;
+    swChild = NULL;
+    seChild = NULL;
+}
+
+//ctor
+Quadtree::Quadtree(PNG const & source, int resolution){
+    buildTree(source,resolution);
+    res = resolution;
+}
+
+//ctor node
+Quadtree::QuadtreeNode::QuadtreeNode(RGBAPixel const & pix){
+    nwChild = NULL;
+    neChild = NULL;
+    swChild = NULL;
+    seChild = NULL;
+    element = pix;
+}
+
+//cctor
+Quadtree::Quadtree(const Quadtree & other){
+    root = copy(other.root);
+}
+
+//dtor
+Quadtree::~Quadtree(){
+    clear(root);
+}
+
+// = operator
+Quadtree const & Quadtree::operator=(Quadtree const & other){
+    clear(root);
+    root = copy(other.root);
+    return *this;
+}
+
+//delete current content of quadtree and build a new one
+void Quadtree::buildTree(PNG const & source, int resolution){
+    if (resolution == 0) {
+        height = -1;
+        return;
+    }
+    height = 0;
+    while (pow(2, height) < resolution){
+        height++;
+    }
+    root = buildTree(source, resolution, 0, 0);
+}
+//buildTree helper function
+Quadtree::QuadtreeNode * Quadtree::buildTree(PNG const & source, int resolution, int x, int y){
+    if (resolution == 1) {
+        return new QuadtreeNode(*source(x,y));
+    }
+    QuadtreeNode * tN = new QuadtreeNode();
+    //recursion
+    tN->nwChild = buildTree(source, resolution/2, x, y);
+    tN->neChild = buildTree(source, resolution/2, x+resolution/2, y);
+    tN->swChild = buildTree(source, resolution/2, x, y+resolution/2);
+    tN->seChild = buildTree(source, resolution/2, x+resolution/2, y+resolution/2);
+    //set color to average of children
+    //red
+    tN->element.red = (tN->nwChild->element.red + tN->neChild->element.red + tN->swChild->element.red + tN->seChild->element.red)/4;
+    //blue
+    tN->element.blue = (tN->nwChild->element.blue + tN->neChild->element.blue + tN->swChild->element.blue + tN->seChild->element.blue)/4;
+    //green
+    tN->element.green = (tN->nwChild->element.green + tN->neChild->element.green + tN->swChild->element.green + tN->seChild->element.green)/4;
+    return tN;
+}
+
+//get RGBAPixel at x, y
+RGBAPixel Quadtree::getPixel(int x, int y) const{
+    double xi = res/2-.5;
+    double yi = res/2-.5;
+    int rest = res/2;
+    QuadtreeNode * curr = root;
+    while (rest > 0) {
+        rest = rest/2;
+        if(x <= xi){
+            xi = xi - rest;
+            if (y <= yi){
+                curr = curr->nwChild;
+                yi = yi - rest;
+            }
+            else{
+                curr = curr->swChild;
+                yi = yi + rest;
+            }
+        }
+        else{
+            xi = xi + rest;
+            if (y <= yi){
+                curr = curr->neChild;
+                yi = yi - rest;
+            }
+            else{
+                curr = curr->seChild;
+                yi = yi + rest;
+            }
+        }
+    }
+
+    return curr->element;
+}
+
+PNG Quadtree::decompress() const{
+    if(root == NULL) return PNG();
+    PNG out = PNG(res,res);
+    for(int i = 0; i < res; i++){
+        for(int j = 0; j < res; j++) {
+            *out(i,j) = getPixel(i,j);
+        }
+    }
+    return out;
+}
+//dtor helper
+void Quadtree::clear(QuadtreeNode * curr){
+    if (curr == NULL) return;
+    if (curr->nwChild == NULL){
+        delete curr;
+        return;
+    }
+    clear(curr->nwChild);
+    clear(curr->neChild);
+    clear(curr->swChild);
+    clear(curr->seChild);
+    delete curr;
+    return;
+}
+
+//cctor helper
+Quadtree::QuadtreeNode * Quadtree::copy(QuadtreeNode * curr){
+    if(curr == NULL) return NULL;
+    if(curr->nwChild == NULL){
+        QuadtreeNode * ncopy = new QuadtreeNode(curr->element);
+        return ncopy;
+    }
+    QuadtreeNode * ncopy = new QuadtreeNode(curr->element);
+    ncopy->nwChild = copy(curr->nwChild);
+    ncopy->neChild = copy(curr->neChild);
+    ncopy->swChild = copy(curr->swChild);
+    ncopy->seChild = copy(curr->seChild);
+    return ncopy;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~5.1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
+void Quadtree::clockwiseRotate (){
+//Rotates the Quadtree object's underlying image clockwise by 90 degrees.
+}
+
+void Quadtree::prune (int tolerance){
+//Compresses the image this Quadtree represents.
+}
+
+int Quadtree::pruneSize (int tolerance) const{
+//This function is similar to prune; however, it does not actually prune the Quadtree.
+    return 0;
+}
+
+int Quadtree::idealPrune (int numLeaves) const{
+//Calculates and returns the minimum tolerance necessary to guarantee that upon pruning the tree, no more than numLeaves leaves remain in the Quadtree.
+    return 0;
+}
+/*
+void Quadtree:printTree (std::ostream &out=std::cout) const{
+//Given: prints the leaves of the Quadtree using a preorder traversal.
+}
+
+bool Quadtree::operator== (Quadtree const &other) const{
+//Given: compares the current Quadtree with the parameter Quadtree, and determines whether or not the two are the same.
+    return false;
+}
+*/

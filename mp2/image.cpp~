@@ -1,0 +1,65 @@
+#include "image.h"
+
+//flips the image across vertical line through its center.
+void Image::flipleft(){
+	size_t wi = this->width(); //assign width to wi
+	size_t hi = this->height(); // assign height to hi
+	for (size_t x = 0; x < wi/2; x++) //loop x through 0 to wi/2-1 (half of image)
+	{
+		for(size_t y = 0; y < hi; y++) //loop y through 0 to hi-1
+		{
+			RGBAPixel * left = (*this)(x,y);
+            RGBAPixel * right = (*this)(wi-x,y);
+            RGBAPIXEL * temp = New RGBAPixel;
+            *temp = *left;
+            (*this)(x,y) = *right;
+            (*this)(wi-x,y) = *temp;
+        }
+	}
+}
+
+//adds specified red, blue, and green values to the image.
+void Image::adjustbrightness(int r, int g, int b){
+    for (size_t x = 0; x < wi; x++) //loop x through 0 to wi-1
+	{
+		for(size_t y = 0; y < hi; y++) //loop y through 0 to hi-1
+		{
+            //add user input values of r g and b to (*this)(x,y)->color.
+            //if value exceeds 255, cap at 255.
+            (*this)(x,y)->red = (*this)(x,y)->red + r;
+            if ((*this)(x,y)->red > 255)
+                (*this)(x,y)->red = 255;
+            (*this)(x,y)->green = (*this)(x,y)->green + g;
+            if ((*this)(x,y)->green > 255)
+                (*this)(x,y)->green = 255;
+            (*this)(x,y)->blue = (*this)(x,y)->blue + b;
+            if ((*this)(x,y)->blue > 255)
+                (*this)(x,y)->blue = 255;
+        }
+	}
+
+
+}
+
+//make pixels of image equal to 255 - original.
+void Image::invertcolors(){
+    for (size_t x = 0; x < wi; x++) //loop x through 0 to wi-1
+	{
+		for(size_t y = 0; y < hi; y++) //loop y through 0 to hi-1
+		{
+            (*this)(x,y)->red = (*this)(x,y)->red + r;
+            if ((*this)(x,y)->red > 255)
+                (*this)(x,y)->red = 255;
+            (*this)(x,y)->green = (*this)(x,y)->green + g;
+            if ((*this)(x,y)->green > 255)
+                (*this)(x,y)->green = 255;
+            (*this)(x,y)->blue = (*this)(x,y)->blue + b;
+            if ((*this)(x,y)->blue > 255)
+                (*this)(x,y)->blue = 255;
+        }
+	}
+    
+    
+
+
+}

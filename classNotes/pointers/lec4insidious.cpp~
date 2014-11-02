@@ -1,0 +1,19 @@
+#include<iostream>
+using namespace std;
+
+int main() {
+
+	int *q, *p;
+	
+	p = new int(5);
+	q = p;
+	cout << "1 *q: " << *q << endl;
+	delete p; // both p and q looses its target.
+	p = q = NULL; //without this, variable would be invalid.
+
+	cout << "2 *q: "<< *q << endl;
+	
+	int * r = new int(7);
+	cout << "3 *q: " << *q << endl; // insidious bug.
+	return 0;
+}
